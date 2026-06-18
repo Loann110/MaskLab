@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MaskLab</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ============================ RAIL ============================ -->
+    <aside class="rail">
+      <div class="brand">
+        <img class="brand-logo" src="assets/logo.png" alt="Logo" />
+        <div>
+          <div class="brand-name">MaskLab</div>
+          <div class="brand-sub">100% Local</div>
+        </div>
+      </div>
+
+      <div class="status" id="status">
+        <span class="dot"></span>
+        <div class="status-text">
+          <strong id="statusText" data-i18n="statusNotLoaded">Modèle non chargé</strong>
+          <span id="deviceText">device —</span>
+        </div>
+      </div>
+
+
+      <!-- workspace folders -->
+      <div class="card">
+        <div class="section-body" style="padding:14px;">
+          <div class="card-eyebrow" data-i18n="workspace">Espace de travail</div>
+          <div class="field" style="margin-top:0;">
+            <label data-i18n="imagesFolder">Dossier des images</label>
+            <input id="imagesDir" type="text" data-i18n-ph="imagesPh" placeholder="C:\…\images" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label><span data-i18n="saveFolder">Dossier de sauvegarde</span> <span class="tag" data-i18n="masksTag">masques</span></label>
+            <input id="masksDir" type="text" data-i18n-ph="masksPh" placeholder="C:\…\mask" spellcheck="false" />
+          </div>
+        </div>
+      </div>
+
+      <!-- prompt -->
+      <div class="card">
+        <div class="section-body" style="padding:14px;">
+          <div class="field" style="margin-top:0;">
+            <label data-i18n="textPrompt">Prompt texte</label>
+            <textarea id="prompt" rows="2" data-i18n-ph="promptPh" placeholder="Ex : cloud, sky, person, car…"></textarea>
+          </div>
+
+          <div class="range-head">
+            <label for="threshold" data-i18n="confThreshold">Seuil de confiance</label>
+            <output id="thresholdValue">0.35</output>
+          </div>
+          <input id="threshold" type="range" min="0" max="1" step="0.01" value="0.35" />
+
+          <label class="opt">
+            <input id="saveInstances" type="checkbox" checked />
+            <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l4 4L19 6"/></svg></span>
+            <span data-i18n="saveInstancesLbl">Enregistrer les instances séparées</span>
+          </label>
+          <label class="opt">
+            <input id="saveMeta" type="checkbox" />
+            <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l4 4L19 6"/></svg></span>
+            <span data-i18n="saveMetaLbl">Enregistrer les métadonnées JSON</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- actions -->
+      <div class="action-grid">
+        <div class="row2">
+          <button id="scanBtn" class="btn scan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18"/></svg>
+            <span data-i18n="scan">Scanner</span>
+          </button>
+          <button id="loadModelBtn" class="btn load">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+            <span data-i18n="load">Charger</span>
+          </button>
+        </div>
+        <button id="processOneBtn" class="btn primary block">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
+          <span data-i18n="genMask">Générer le masque</span>
+        </button>
+        <button id="processAllBtn" class="btn batch block">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span data-i18n="genAll">Générer tout le dossier</span>
+        </button>
+        <button id="stopBtn" class="btn danger block hidden" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          <span data-i18n="stopGen">Stop génération</span>
+        </button>
+      </div>
+
+      <div class="rail-spacer"></div>
+    </aside>
+
+    <!-- ============================ MAIN ============================ -->
+    <div class="main">
+      <header class="topbar">
+        <h2 data-i18n="workshop">Atelier de masques</h2>
+        <div class="crumb">
+          <span class="sep">/</span>
+          <span class="cur" id="crumbCurrent">aucune image</span>
+        </div>
+        <div class="spacer"></div>
+        <span class="pill" id="devicePill"><span class="led"></span><b id="devicePillText">device —</b></span>
+        <span class="pill" id="countPill"><b id="imageCount">0</b> <span data-i18n="imagesSuffix">images</span></span>
+        <button id="settingsBtn" class="icon-btn" type="button" data-i18n-title="settings" title="Réglages" aria-label="Réglages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </header>
+
+      <div class="workspace">
+
+        <!-- image filmstrip -->
+        <section class="images">
+          <div class="images-head">
+            <div class="row">
+              <span class="eyebrow"><span data-i18n="imagesLabel">Images</span> · <b id="filterCount">0</b></span>
+            </div>
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+              <input id="searchImages" type="search" data-i18n-ph="filterPh" placeholder="Filtrer par nom…" />
+            </div>
+          </div>
+          <div id="filmstrip" class="filmstrip">
+            <div class="empty">
+              <div class="ic">⚠️</div>
+              <p><span data-i18n="emptyScanPre">Clique sur</span> <b data-i18n="scan">Scanner</b> <span data-i18n="emptyScanPost">pour lister les images du dossier.</span></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- inspector -->
+        <section class="inspector">
+          <div class="inspector-bar">
+            <div class="viewtabs" id="viewtabs">
+              <button class="vt active" data-view="image" data-i18n="tabImage">Image</button>
+              <button class="vt" data-view="overlay" data-i18n="tabOverlay" disabled>Calque</button>
+              <button class="vt" data-view="mask" data-i18n="tabMask" disabled>Masque</button>
+              <button class="vt" data-view="compare" data-i18n="tabCompare" disabled>Comparer</button>
+            </div>
+
+            <div class="ov-ctrl hidden" id="ovCtrl">
+              <div class="swatches" id="swatches">
+                <button class="swatch active" data-c="#ff6a4d" style="background:#ff6a4d" data-i18n-title="swCoral" title="Corail"></button>
+                <button class="swatch" data-c="#34d8b4" style="background:#34d8b4" data-i18n-title="swTeal" title="Teal"></button>
+                <button class="swatch" data-c="#5b8cff" style="background:#5b8cff" data-i18n-title="swBlue" title="Bleu"></button>
+                <button class="swatch" data-c="#f4b740" style="background:#f4b740" data-i18n-title="swAmber" title="Ambre"></button>
+                <button class="swatch" data-c="#e15bff" style="background:#e15bff" data-i18n-title="swMagenta" title="Magenta"></button>
+              </div>
+              <input id="ovAlpha" class="mini-range" type="range" min="0.1" max="1" step="0.05" value="0.55" data-i18n-title="overlayOpacity" title="Opacité du calque" />
+            </div>
+
+            <div class="spacer"></div>
+
+            <div class="ctrl-group">
+              <button class="btn icon" id="zoomOut" data-i18n-title="zoomOutT" title="Dézoomer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+              <span class="zlabel" id="zoomLabel">100%</span>
+              <button class="btn icon" id="zoomIn" data-i18n-title="zoomInT" title="Zoomer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="btn icon" id="zoomReset" data-i18n-title="zoomResetT" title="Réinitialiser la vue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V5a2 2 0 0 1 2-2h4M21 9V5a2 2 0 0 0-2-2h-4M3 15v4a2 2 0 0 0 2 2h4M21 15v4a2 2 0 0 1-2 2h-4"/></svg></button>
+            </div>
+          </div>
+
+          <div class="viewport empty-state" id="viewport">
+            <div class="viewport-empty" id="viewportEmpty">
+              <div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+              <h3 data-i18n="emptyViewTitle">Aucune image sélectionnée</h3>
+              <p data-i18n="emptyViewBody">Sélectionne une image à gauche pour l'inspecter.</p>
+            </div>
+
+            <div class="pan" id="pan" style="display:none;">
+              <div class="stage" id="stage" data-view="image">
+                <img class="layer layer-base" id="layerBase" alt="" />
+                <img class="layer layer-mask" id="layerMask" alt="" />
+                <div class="layer layer-tint" id="layerTint"></div>
+                <div class="wipe" id="wipe">
+                  <span class="wipe-tag l" data-i18n="wipeLeft">calque</span>
+                  <span class="wipe-tag r" data-i18n="wipeRight">source</span>
+                  <div class="wipe-line"></div>
+                  <div class="wipe-handle" id="wipeHandle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="progress" id="progress">
+              <div class="pr-head"><span id="progressLabel" data-i18n="treatment">Traitement…</span><b id="progressCount">0 / 0</b></div>
+              <div class="bar"><i id="progressBar"></i></div>
+            </div>
+          </div>
+
+          <div class="results" id="results" style="display:none;">
+            <div class="stat">
+              <span class="k" data-i18n="statInstances">Instances</span>
+              <span class="v accent" id="instancesCount">0</span>
+            </div>
+            <div class="stat path-stat">
+              <span class="k" data-i18n="statMaskSaved">Masque enregistré</span>
+              <span class="v" id="maskPath">—</span>
+            </div>
+            <div class="instances" id="instancesList"></div>
+            <div class="dl-row">
+              <a id="dlMask" class="btn sm" download>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg>
+                <span data-i18n="dlMaskLbl">Masque</span>
+              </a>
+              <a id="dlOverlay" class="btn sm ghost" download>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg>
+                <span data-i18n="dlOverlayLbl">Calque</span>
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- logs -->
+      <div class="logs" id="logs">
+        <div class="logs-head" id="logsHead">
+          <span class="eyebrow" data-i18n="logsTitle">Journal</span>
+          <span class="last" id="logsLast" data-i18n="ready">Prêt.</span>
+          <button id="clearLogBtn" class="btn sm ghost" type="button" data-i18n="clearBtn">Effacer</button>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="logs-body"><pre id="logBox"></pre></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ SETTINGS MODAL ============================ -->
+  <div class="modal-backdrop" id="settingsModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <header class="modal-head">
+        <h3 id="settingsTitle" data-i18n="settings">Réglages</h3>
+        <button id="settingsClose" class="icon-btn sm" type="button" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <section class="mgroup">
+          <div class="mgroup-title" id="interfaceGroupTitle" data-i18n="grpInterface">Interface</div>
+          <div class="field">
+            <label id="languageLabel" data-i18n="langLabel">Langue</label>
+            <select id="setLanguage">
+              <option value="fr" selected>Français</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="mgroup">
+          <div class="mgroup-title" data-i18n="grpModel">Modèle</div>
+          <div class="field">
+            <label data-i18n="checkpointLabel">Checkpoint SAM3</label>
+            <input id="checkpointPath" type="text" placeholder="sam3_model/sam3.pt" spellcheck="false" />
+            <p class="hint"><span data-i18n="checkpointHint1">Chemin du fichier</span> <code>.pt</code><span data-i18n="checkpointHint2">. Relatif au projet ou absolu.</span></p>
+          </div>
+        </section>
+
+        <section class="mgroup">
+          <div class="mgroup-title"><span data-i18n="grpServer">Serveur</span> <span class="tag" data-i18n="restartTag">redémarrage requis</span></div>
+          <div class="grid2">
+            <div class="field">
+              <label data-i18n="hostLabel">Hôte</label>
+              <input id="setHost" type="text" placeholder="127.0.0.1" spellcheck="false" />
+            </div>
+            <div class="field">
+              <label data-i18n="portLabel">Port</label>
+              <input id="setPort" type="number" min="1" max="65535" placeholder="7860" />
+            </div>
+          </div>
+          <label class="opt">
+            <input id="setOpenBrowser" type="checkbox" />
+            <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l4 4L19 6"/></svg></span>
+            <span data-i18n="openBrowserLbl">Ouvrir le navigateur au démarrage</span>
+          </label>
+        </section>
+      </div>
+
+      <footer class="modal-foot">
+        <span class="modal-path">config.json</span>
+        <div class="modal-actions">
+          <button id="settingsCancel" class="btn ghost" type="button" data-i18n="cancelBtn">Annuler</button>
+          <button id="saveConfigBtn" class="btn primary" type="button" data-i18n="saveBtn">Enregistrer</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <script src="app.js"></script>
+</body>
+</html>

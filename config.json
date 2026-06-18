@@ -1,0 +1,13 @@
+{
+  "checkpoint_path": "sam3_model/sam3.pt",
+  "prompt": "",
+  "confidence_threshold": 0.35,
+  "save_meta_json": false,
+  "save_instance_masks": true,
+  "open_browser_on_start": true,
+  "host": "127.0.0.1",
+  "port": 7860,
+  "language": "en",
+  "sam3_repo_path": "",
+  "bpe_path": ""
+}

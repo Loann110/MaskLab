@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pillow>=10.0
+numpy>=1.24
+python-multipart>=0.0.9
+pydantic>=2.0
+
+# IMPORTANT:
+# PyTorch is not pinned here because CUDA/CPU versions depend on your PC.
+# Install torch separately if needed: https://pytorch.org/get-started/locally/
